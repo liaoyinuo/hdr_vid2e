@@ -1,7 +1,6 @@
 import os
 import shutil
 
-import cv2
 import numpy as np
 from tqdm import tqdm
 
@@ -29,6 +28,7 @@ class Upsampler:
         sequence_counter = 0
         for src_absdirpath, dirnames, filenames in os.walk(self.src_dir):
             sequence = get_sequence_or_none(src_absdirpath)
+            print(sequence)
             if sequence is None:
                 continue
             sequence_counter += 1
@@ -58,11 +58,11 @@ class Upsampler:
 
             timestamps_list += timestamps
             for frame in total_frames:
-                self._write_img(frame, idx, dest_imgs_dir)
+                self._write_npy(frame, idx, dest_imgs_dir)
                 idx += 1
 
         timestamps_list.append(t1)
-        self._write_img(I1[0, ...], idx, dest_imgs_dir)
+        self._write_npy(I1[0, ...], idx, dest_imgs_dir)
         self._write_timestamps(timestamps_list, dest_timestamps_filepath)
 
     def _upsample_adaptive(self, I0, I1, t0, t1, num_bisections=-1):
@@ -73,12 +73,7 @@ class Upsampler:
         image, F_0_1, F_1_0 = self.interpolator.interpolate(I0, I1, dt)
 
         if num_bisections < 0:
-            flow_mag_0_1_max = ((F_0_1 ** 2).sum(-1) ** .5).max()
-            flow_mag_1_0_max = ((F_1_0 ** 2).sum(-1) ** .5).max()
-            num_bisections = int(np.ceil(np.log(max([flow_mag_0_1_max, flow_mag_1_0_max]))/np.log(2)))
-
-            if num_bisections == 0:
-                return [image[0]], [(t0 + t1) / 2]
+            num_bisections = 1
 
         left_images, left_timestamps = self._upsample_adaptive(I0, image, t0, (t0+t1)/2, num_bisections=num_bisections-1)
         right_images, right_timestamps = self._upsample_adaptive(image, I1, (t0+t1)/2, t1, num_bisections=num_bisections-1)
@@ -94,12 +89,12 @@ class Upsampler:
         shutil.copytree(src_dir, dest_dir, ignore=ignore_files)
 
     @staticmethod
-    def _write_img(img: np.ndarray, idx: int, imgs_dir: str):
+    def _write_npy(img: np.ndarray, idx: int, imgs_dir: str):
         assert os.path.isdir(imgs_dir)
-        img = np.clip(img * 255, 0, 255).astype("uint8")
-        path = os.path.join(imgs_dir, "%08d.png" % idx)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        cv2.imwrite(path, img)
+        img = np.clip(img, 0, 1)
+        path = os.path.join(imgs_dir, "%08d.npy" % idx)
+        np.save(path, img)
+
 
     @staticmethod
     def _write_timestamps(timestamps: list, timestamps_filename: str):
