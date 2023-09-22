@@ -44,12 +44,13 @@ class Upsampler:
         timestamps_list = list()
 
         idx = 0
+        bs = int(input('请输入插帧倍数2^'))
         for img_pair, time_pair in tqdm(next(sequence), total=len(sequence), desc=type(sequence).__name__):
             I0 = img_pair[0][None]
             I1 = img_pair[1][None]
             t0, t1 = time_pair
 
-            total_frames, total_timestamps = self._upsample_adaptive(I0, I1, t0, t1, int(input('请输入插帧倍数2^')))
+            total_frames, total_timestamps = self._upsample_adaptive(I0, I1, t0, t1, bs)
             total_frames = [I0[0]] + total_frames
             timestamps = [t0] + total_timestamps
 
