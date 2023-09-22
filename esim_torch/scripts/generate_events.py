@@ -9,9 +9,6 @@ import tqdm
 import torch
 
 
-def is_valid_dir(subdirs, files):
-    return len(subdirs) == 1 and len(files) == 1 and "timestamps.txt" in files and "imgs" in subdirs
-
 
 def process_dir(outdir, indir, args):
     print(f"Processing folder {indir}... Generating events in {outdir}")
@@ -66,7 +63,5 @@ if __name__ == "__main__":
     print(f"Generating events with cn={args.contrast_threshold_negative}, cp={args.contrast_threshold_positive} and rp={args.refractory_period_ns}")
 
     for path, subdirs, files in os.walk(args.input_dir):
-        if is_valid_dir(subdirs, files):
-            output_folder = os.path.join(args.output_dir, os.path.relpath(path, args.input_dir))
-
-            process_dir(output_folder, path, args)
+        output_folder = os.path.join(args.output_dir, os.path.relpath(path, args.input_dir))
+        process_dir(output_folder, path, args)
