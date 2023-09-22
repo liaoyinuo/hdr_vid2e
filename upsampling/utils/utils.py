@@ -14,7 +14,7 @@ def get_imgs_directory(dirpath: str) -> Union[None, str]:
 
 
 def get_sequence_or_none(dirpath: str) -> Union[None, Sequence]:
-    fps = int(input('请输入FPS: '))
-    return ImageSequence(dirpath, fps)
+    #fps = int(input('请输入FPS: '))
+    return ImageSequence(dirpath, 25)
 
 

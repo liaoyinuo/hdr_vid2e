@@ -1,4 +1,5 @@
 import os
+import cv2
 import shutil
 
 import numpy as np
@@ -48,7 +49,7 @@ class Upsampler:
             I1 = img_pair[1][None]
             t0, t1 = time_pair
 
-            total_frames, total_timestamps = self._upsample_adaptive(I0, I1, t0, t1)
+            total_frames, total_timestamps = self._upsample_adaptive(I0, I1, t0, t1, int(input('请输入插帧倍数2^')))
             total_frames = [I0[0]] + total_frames
             timestamps = [t0] + total_timestamps
 
@@ -65,15 +66,13 @@ class Upsampler:
         self._write_npy(I1[0, ...], idx, dest_imgs_dir)
         self._write_timestamps(timestamps_list, dest_timestamps_filepath)
 
-    def _upsample_adaptive(self, I0, I1, t0, t1, num_bisections=-1):
+    def _upsample_adaptive(self, I0, I1, t0, t1, num_bisections):
         if num_bisections == 0:
             return [], []
 
         dt = self.batch_dt = np.full(shape=(1,), fill_value=0.5, dtype=np.float32)
         image, F_0_1, F_1_0 = self.interpolator.interpolate(I0, I1, dt)
 
-        if num_bisections < 0:
-            num_bisections = 1
 
         left_images, left_timestamps = self._upsample_adaptive(I0, image, t0, (t0+t1)/2, num_bisections=num_bisections-1)
         right_images, right_timestamps = self._upsample_adaptive(image, I1, (t0+t1)/2, t1, num_bisections=num_bisections-1)
@@ -91,9 +90,10 @@ class Upsampler:
     @staticmethod
     def _write_npy(img: np.ndarray, idx: int, imgs_dir: str):
         assert os.path.isdir(imgs_dir)
-        img = np.clip(img, 0, 1)
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        img = cv2.resize(img, dsize=None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
         path = os.path.join(imgs_dir, "%08d.npy" % idx)
-        np.save(path, img)
+        np.save(path, np.clip(img,0,1))
 
 
     @staticmethod

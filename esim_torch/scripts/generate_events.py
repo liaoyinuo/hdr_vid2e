@@ -1,10 +1,10 @@
 import argparse
-from operator import sub
+
 import os
 import esim_torch
 import numpy as np
 import glob
-import cv2
+
 import tqdm
 import torch
 
@@ -33,8 +33,8 @@ def process_dir(outdir, indir, args):
 
     counter = 0
     for image_file, timestamp_ns in zip(image_files, timestamps_ns):
-        image = cv2.imread(image_file, cv2.IMREAD_GRAYSCALE)
-        log_image = np.log(image.astype("float32") / 255 + 1e-5)
+        image = np.load(image_file)
+        log_image = np.log(image + 1e-5)
         log_image = torch.from_numpy(log_image).cuda()
 
         sub_events = esim.forward(log_image, timestamp_ns)
